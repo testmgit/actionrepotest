@@ -1,0 +1,36 @@
+name: Generate Multiple Artifacts
+
+on:
+  workflow_dispatch: # 手动触发
+    inputs:
+      artifact_count:
+        description: '要生成的Artifact数量'
+        required: true
+        default: '4'
+        type: choice
+        options:
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+
+jobs:
+  create-artifacts:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # 根据输入参数动态生成任务矩阵
+        artifact_num: ${{ fromJson(format('[{0}]', inputs.artifact_count)) }}
+    steps:
+      - name: 创建一个带编号的文件
+        run: |
+          echo "这是自动生成的 Artifact #${{ matrix.artifact_num }}" > artifact_${{ matrix.artifact_num }}.txt
+          echo "生成时间: $(date)" >> artifact_${{ matrix.artifact_num }}.txt
+          echo "工作流ID: ${{ github.run_id }}" >> artifact_${{ matrix.artifact_num }}.txt
+
+      - name: 上传Artifact ${{ matrix.artifact_num }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: numbered-artifact-${{ matrix.artifact_num }}
+          path: artifact_${{ matrix.artifact_num }}.txt
